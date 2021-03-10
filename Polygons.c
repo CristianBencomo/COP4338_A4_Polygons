@@ -41,7 +41,7 @@ char *dynamicScan(char *str)
     int ch; //character
     str = malloc(sizeof(char)); //allocate str
 
-    for(int i = 0; i <INPUT_LENGTH && (ch = getchar()) != '\n'; i++)
+    for(int i = 0; i < INPUT_LENGTH && (ch = getchar()) != '\n'; i++)
     {
         str = realloc(str, (i+2)*sizeof(char)); //reallocate as characters are taken in
         str[i] = (char) ch;
@@ -71,18 +71,42 @@ void add(char *str)
     polyList[polygonCount].numberOfVertices = 0;
     Polygon *currentPolygon = &polyList[polygonCount];
     currentPolygon->shiftDirection = NONE;
+    currentPolygon->vertexList = malloc(1 * sizeof(Polygon));
 
-    for(int i=0; str[i] != '\0' || str[i+1] != '\0'; i+=2)
+    for(int i=0; str[i] != '\0' || str[i+1] != '\0'; i+=2) // Loops through every character in the string
     {
-        currentPolygon->vertexList[currentPolygon->numberOfVertices].x = str[i];
-    //     currentPolygon->vertexList[currentPolygon->numberOfVertices].y = str[i+1];
-    //     currentPolygon->numberOfVertices++;
+        
+        printf("%d", i);
+        currentPolygon->vertexList = realloc(currentPolygon->vertexList, (i+1) * sizeof(Polygon)); // Allocate memory for new vertex
+        currentPolygon->vertexList[currentPolygon->numberOfVertices].x = str[i] - '0'; // X
+        currentPolygon->vertexList[currentPolygon->numberOfVertices].y = str[i+1] - '0'; // Y
+        currentPolygon->numberOfVertices++;
     }
+    polygonCount++;
 }
 
-void summary()
+// prints the list of polygons and each of their number of vertices plus their centroid (avg of x and y)
+void summary(int polygonCount)
 {
+    printf("\nSUMMARY OF POLYGONS:\n");
+    for(int i = 0; i < polygonCount; i++) // For every polygon
+    {
+        Polygon currentPolygon = polyList[i];
+        int numVertices = currentPolygon.numberOfVertices;
+        int centroid_x = 0, centroid_y = 0; 
+        for(int j = 0; j <numVertices; j++) // For each vertex
+        {   
+            centroid_x += currentPolygon.vertexList[j].x; // add current x
+            centroid_y += currentPolygon.vertexList[j].y; // add current y
+        }
 
+        centroid_x /= numVertices; // divide for centroid final result
+        centroid_y /= numVertices; // divide for centroid final result
+        
+        //Printing 
+        printf("Polygon #%d:\n", i+1);
+        printf("Number of vertices = %d\nCentroid: X=%d Y=%d\n\n", numVertices,centroid_x, centroid_y);
+    }
 }
 
 void turn()
@@ -91,11 +115,6 @@ void turn()
 }
 
 void shift()
-{
-
-}
-
-void quit()
 {
 
 }
@@ -121,12 +140,18 @@ int main(int argc, char const *argv[])
         
         if(strcasecmp(command, "add") == 0) // Add command
         {
+            if(polygonCount >= 1000)
+            {
+                printf("1000 polygons have been saved, no more polygons can be added\nPlease use a different command\n");
+                continue;
+            }
             add(parameters);
+            // Add printf?
         }
 
         else if(strcasecmp(command, "summary") == 0) //summary command
         {
-
+            summary(polygonCount);
         }
 
         else if(strcasecmp(command, "turn") == 0) // turn command
@@ -153,7 +178,7 @@ int main(int argc, char const *argv[])
         // free allocated space
         free(command);
         free(parameters);
-
+        
     } while (!wantToExit);    
     
 }
