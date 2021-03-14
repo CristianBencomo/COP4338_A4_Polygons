@@ -15,7 +15,11 @@ typedef enum  // Direction
     NONE = 0,
     UP = 1,
     DOWN = 2,
+    UPandLEFT = 3,
     LEFT = 4,
+    UPandRIGHT = 5,
+    DOWNandLEFT = 6,
+    DOWNandRIGHT = 7,
     RIGHT = 8
 } Direction;
 
@@ -51,6 +55,42 @@ char *dynamicScan(char *str)
     return str; //return final string
 }
 
+// function to get the string of a direction
+char *getdirectionstr(Direction direction)
+{
+    switch (direction)
+    {
+        break;
+        case UP:
+        return "up";
+        break;
+        case DOWN:
+        return "down";
+        break;
+        case LEFT:
+        return "left";
+        break;
+        case RIGHT:
+        return "right";
+        break;
+        case UPandRIGHT:
+        return "up-left";
+        break;
+        case UPandLEFT:
+        return "up-left";
+        break;
+        case DOWNandRIGHT:
+        return "down-right";
+        break;
+        case DOWNandLEFT:
+        return "down-left";
+        break;
+        default:
+        return "no direction";
+        break;
+    }
+}
+
 // Function that splits input into words
 void splitstr(char *str, char *command)
 {
@@ -59,9 +99,8 @@ void splitstr(char *str, char *command)
 }
 
 // adding a polygon to the list
-void add(char *str)
+void add(char *token)
 {
-    char *token = strtok(str, " \0");
     token = strtok(NULL, " \0"); //skipping first token which is the command
 
     Polygon *currentPolygon = &polyList[polygonCount];
@@ -70,35 +109,23 @@ void add(char *str)
     currentPolygon->vertexList = malloc(1 * sizeof(Polygon));
 
     int x, y, inputCounter = 0;
-    printf("Before while loop\n");
     while(token != NULL)
     {
-        printf("In While loop\n");
         if(inputCounter % 2 == 0)
         {
             x = atoi(token);
-            printf("in if\n");
         }
         else
         {
-            printf("in else\n");
             y = atoi(token);
             currentPolygon->vertexList = realloc(currentPolygon->vertexList, (inputCounter + 1) * sizeof(Polygon)); // Allocate memory for new vertex
-            currentPolygon->vertexList[currentPolygon->numberOfVertices].x = x; // X
-            currentPolygon->vertexList[currentPolygon->numberOfVertices].y = y; // Y
+            currentPolygon->vertexList[currentPolygon->numberOfVertices].x = x;
+            currentPolygon->vertexList[currentPolygon->numberOfVertices].y = y;
             currentPolygon->numberOfVertices++;
-            printf("X=%d Y=%d\n",currentPolygon->vertexList[currentPolygon->numberOfVertices].x, currentPolygon->vertexList[currentPolygon->numberOfVertices].y );
         }
+        token = strtok(NULL, " \0");
         inputCounter++;
     }
-
-    // for(int i=0; str[i] != '\0' || str[i+1] != '\0'; i+=2) // Loops through every character in the string
-    // {
-    //     currentPolygon->vertexList = realloc(currentPolygon->vertexList, (i+1) * sizeof(Polygon)); // Allocate memory for new vertex
-    //     currentPolygon->vertexList[currentPolygon->numberOfVertices].x = str[i] - '0'; // X
-    //     currentPolygon->vertexList[currentPolygon->numberOfVertices].y = str[i+1] - '0'; // Y
-    //     currentPolygon->numberOfVertices++;
-    // }
     polygonCount++;
 }
 
@@ -110,23 +137,21 @@ void summary(int polygonCount)
     {
         Polygon currentPolygon = polyList[i];
         int numVertices = currentPolygon.numberOfVertices;
-        float centroid_x = 0, centroid_y = 0; 
+        int centroid_x = 0, centroid_y = 0;
         for(int j = 0; j <numVertices; j++) // For each vertex
         {   
             centroid_x += currentPolygon.vertexList[j].x; // add current x
             centroid_y += currentPolygon.vertexList[j].y; // add current y
         }
 
-        printf("Centroids x= %d    y=%d\n", centroid_x, centroid_y);
         centroid_x /= numVertices; // divide for centroid final result
         centroid_y /= numVertices; // divide for centroid final result
         
         //Printing 
         printf("Polygon #%d:\n", i+1);
-        printf("direction: %d\n", currentPolygon.shiftDirection);
-        printf("Number of vertices = %d\nCentroid: X=%d Y=%d\n\n", numVertices,centroid_x, centroid_y);
-        
-    }
+        printf("direction: %s\n", getdirectionstr(currentPolygon.shiftDirection));
+        printf("Number of vertices = %d\nCentroid: X=%d Y=%d\n\n", numVertices,centroid_x, centroid_y); 
+    }// end of polygon for loop
 }
 
 void turn(char *str)
@@ -165,45 +190,45 @@ int main(int argc, char const *argv[])
     {
         // ask the user for a command and handle input
         printf("Please enter a command...\n");
-        char * input;
+        char *input;
         char *str;
         input = dynamicScan(str);
-        str = realloc(str, strlen(sizeof(input)));
-        strcpy(str,input);
         // free(str);
 
-        // separating command and parameters
-        char *command = malloc(COMMAND_LENGTH*sizeof(char));
-        splitstr(input, command);
+        // Initiating token
+        printf("Before token\n");
+        char *token = strtok(input, " \0");
+
         
-        if(strcasecmp(command, "add") == 0) // Add command
+        printf("Before ifs for commands\n");
+        if(strcasecmp(token, "add") == 0) // Add command
         {
             if(polygonCount >= 1000)
             {
                 printf("1000 polygons have been saved, no more polygons can be added\nPlease use a different command\n");
                 continue;
             }
-            add(str);
+            add(token);
             printf("Polygon added\n");
         }
 
-        else if(strcasecmp(command, "summary") == 0) //summary command
+        else if(strcasecmp(token, "summary") == 0) //summary command
         {
             summary(polygonCount);
         }
 
-        else if(strcasecmp(command, "turn") == 0) // turn command
+        else if(strcasecmp(token, "turn") == 0) // turn command
         {
             turn(input);
             printf("Polygon direction changed\n");
         }
 
-        else if(strcasecmp(command, "shift") == 0) // shift command
+        else if(strcasecmp(token, "shift") == 0) // shift command
         {
 
         }
 
-        else if(strcasecmp(command, "quit") == 0) // quit command
+        else if(strcasecmp(token, "quit") == 0) // quit command
         {
             printf("Leaving program...\n");
             wantToExit = TRUE; // change exit flag
@@ -213,10 +238,6 @@ int main(int argc, char const *argv[])
         {
             printf("Incorrect command, please enter a valid command\n");
         }
-
-        // free allocated space
-        free(command);
-        free(input);
         
     } while (!wantToExit);    
     
