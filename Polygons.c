@@ -15,12 +15,12 @@ typedef enum  // Direction
     NONE = 0,
     UP = 1,
     DOWN = 2,
-    UPandLEFT = 3,
     LEFT = 4,
-    UPandRIGHT = 5,
+    UPandLEFT = 5,
     DOWNandLEFT = 6,
-    DOWNandRIGHT = 7,
-    RIGHT = 8
+    RIGHT = 8,
+    UPandRIGHT = 9,
+    DOWNandRIGHT = 10
 } Direction;
 
 typedef struct // Vertex 
@@ -60,7 +60,6 @@ char *getdirectionstr(Direction direction)
 {
     switch (direction)
     {
-        break;
         case UP:
         return "up";
         break;
@@ -91,13 +90,6 @@ char *getdirectionstr(Direction direction)
     }
 }
 
-// Function that splits input into words
-void splitstr(char *str, char *command)
-{
-    char *token = strtok(str, " \0"); 
-    strcpy(command, token);
-}
-
 // adding a polygon to the list
 void add(char *token)
 {
@@ -105,8 +97,8 @@ void add(char *token)
 
     Polygon *currentPolygon = &polyList[polygonCount];
     currentPolygon->numberOfVertices = 0;
-    currentPolygon->shiftDirection = NONE;
-    currentPolygon->vertexList = malloc(1 * sizeof(Polygon));
+    currentPolygon->shiftDirection = NONE; // default direction
+    currentPolygon->vertexList = malloc(1 * sizeof(Vertex)); // Allocate size of vertex list for 1 vertex
 
     int x, y, inputCounter = 0;
     while(token != NULL)
@@ -119,9 +111,9 @@ void add(char *token)
         {
             y = atoi(token);
             currentPolygon->vertexList = realloc(currentPolygon->vertexList, (inputCounter + 1) * sizeof(Polygon)); // Allocate memory for new vertex
-            currentPolygon->vertexList[currentPolygon->numberOfVertices].x = x;
-            currentPolygon->vertexList[currentPolygon->numberOfVertices].y = y;
-            currentPolygon->numberOfVertices++;
+            currentPolygon->vertexList[currentPolygon->numberOfVertices].x = x; // save x value
+            currentPolygon->vertexList[currentPolygon->numberOfVertices].y = y; //  save y value
+            currentPolygon->numberOfVertices++; // add to ve count
         }
         token = strtok(NULL, " \0");
         inputCounter++;
@@ -154,30 +146,115 @@ void summary(int polygonCount)
     }// end of polygon for loop
 }
 
-void turn(char *str)
+// Function used to change the direction of a polygon
+void turn(char *token)
 {
-    char *token = strtok(str, " \0\n");
-    printf("token %s\n", token);
-    char *polygon_idx = malloc(sizeof(token));
-    strcpy(polygon_idx, token); //Saving polygon index parameter
-    printf("polygon_idx = %s\n", polygon_idx);
+    // Selecting the polygon to be modified
+    token = strtok(NULL, " \0");
+    int idx = atoi(token);
+    token = strtok(NULL, " \0");
+    if(token != NULL)
+    {
+        Polygon *selectedPolygon = &polyList[idx];
 
-    Polygon *currentPolygon = &polyList[atoi(polygon_idx)]; //creating a pointer to the 
+        // Finding the specified direction
+        Direction xDirection, yDirection;
 
-    token = strtok(NULL, " ");
-    printf("token = %s\n", token);
-    int direction = atoi(token);
+        // Y direction
+        if(strstr(token, "up") != NULL)
+        {
+            yDirection = UP;
+        }
+        else if(strstr(token, "down") != NULL)
+        {   
+            yDirection = DOWN; 
+        }
+        else
+        {
+            yDirection = NONE;
+        }
 
-    // printf("direction_int: %d\n", direction);
-    // currentPolygon->shiftDirection = direction;
+        // X direction 
+        if(strstr(token, "left") != NULL)
+        {
+            xDirection = LEFT;
+        }
+        else if(strstr(token, "right") != NULL) 
+        {   
+            xDirection = RIGHT; 
+        }
+        else
+        {
+            xDirection = NONE;
+        }
 
-    free(polygon_idx);
-    // free(direction);
-
+        if((xDirection == NONE) && (yDirection == NONE))
+        {
+            printf("No new direction detected\n");
+        }
+        else
+        {
+            selectedPolygon->shiftDirection = xDirection|yDirection;
+        }
+    }
+    else
+    {
+        printf("Input is not in the correct format\n");
+    }
 }
 
-void shift()
+// Function to move a selected polygon
+void shift(char *token)
 {
+    // Selecting the polygon to be modified
+    token = strtok(NULL, " \0");
+    int idx = atoi(token);
+    token = strtok(NULL, " \0");
+    if(token != NULL)
+    {
+        Polygon *selectedPolygon = &polyList[idx];
+
+        int xShift, yShift;
+        Direction polygonDirection = selectedPolygon->shiftDirection;
+
+        if(polygonDirection == UP || polygonDirection == UPandLEFT || polygonDirection == UPandRIGHT) // If polygon moves up
+        {
+            yShift = 1; // Assigning positive value to y shift
+        }
+        else if(polygonDirection == DOWN || polygonDirection == DOWNandLEFT || polygonDirection == DOWNandRIGHT) // If polygon moves down
+        {
+            yShift = -1; // Assigning negative value to y shift
+        }
+        else
+        {
+            yShift = 0;
+        }
+
+        if(polygonDirection == LEFT || polygonDirection == UPandLEFT || polygonDirection == DOWNandLEFT) // If polygon moves left
+        {
+            xShift = -1; // Assigning a negative value to x shift
+        }
+        else if(polygonDirection == RIGHT || polygonDirection == UPandRIGHT || polygonDirection == DOWNandRIGHT) // If polygon moves right
+        {
+            xShift = 1; // Assigning a positive value to x shift
+        }
+        else
+        {
+            xShift = 0; 
+        }
+
+        int shiftLength = atoi(token);
+
+        xShift *= shiftLength;
+        yShift *= shiftLength;
+
+        selectedPolygon->vertexList[idx].x += xShift;
+        selectedPolygon->vertexList[idx].y += yShift;
+    }
+    else
+    {
+        printf("Input is not in the correct format\n");
+    }
 
 }
 
@@ -196,11 +273,8 @@ int main(int argc, char const *argv[])
         // free(str);
 
         // Initiating token
-        printf("Before token\n");
         char *token = strtok(input, " \0");
 
-        
-        printf("Before ifs for commands\n");
         if(strcasecmp(token, "add") == 0) // Add command
         {
             if(polygonCount >= 1000)
@@ -225,7 +299,8 @@ int main(int argc, char const *argv[])
 
         else if(strcasecmp(token, "shift") == 0) // shift command
         {
-
+            shift(token);
+            printf("Polygon has been moved\n");
         }
 
         else if(strcasecmp(token, "quit") == 0) // quit command
@@ -238,12 +313,8 @@ int main(int argc, char const *argv[])
         {
             printf("Incorrect command, please enter a valid command\n");
         }
+
+        printf("\n"); // New line
         
-    } while (!wantToExit);    
-    
+    } while (!wantToExit); // check if user wants to exit   
 }
-
-
-
-
-
